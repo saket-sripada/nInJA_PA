@@ -8,7 +8,9 @@ from config import (
     L,
     N_elements,
     Tsir,
+    a,
     apodisation_types,
+    b,
     c0,
     dt,
     f_values,
@@ -57,7 +59,7 @@ def main():
     # export / store pressure data
     # save_reconstructed_images(reconstructed_images)
     # save_reconstructed_images(superposition_data)
-    save_data_h5(reconstructed_images, superposition_data)
+    save_data_h5(reconstructed_images, superposition_data, a, b)
 
     # load analytical pressure data, reconstructions
 
