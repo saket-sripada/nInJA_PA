@@ -7,8 +7,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-
-from fwd_model.io import load_reconstructed_images
+from fwd_model.io import load_data_h5
 
 label_font_size = 21
 
@@ -58,9 +57,12 @@ def visualize_comparison(superposition_data, reconstructed_images, sphere_radii,
     plt.tight_layout()
     plt.show()
 
+    # save the figure to folder_name
+    fig.savefig(folder_name + "comparison.png")
 
-filename = "./outputs/20240902_180629/reconstructed_images.h5"  # Replace with your filename
-reconstructed_images, superposition_data = load_reconstructed_images(filename)
+
+folder_name = "./outputs/20240902_183537/"  # Replace with your folder_name
+reconstructed_images, superposition_data, a, b = load_data_h5(folder_name)
 
 # plotting params
 # sphere_radii = [1.542, 0.42, 0.21]  # Your sphere radii

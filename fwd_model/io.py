@@ -62,8 +62,11 @@ def load_data_h5(folder_name):
             parts = key.split("_")
             radius = float(parts[1])
             is_sir = parts[3] == "True"
+            if is_sir:
+                a = float(parts[5])
+                b = float(parts[7])
             data = f[key][()]
             superposition_data[(radius, is_sir)] = data
 
     print(f"Data loaded from {folder_name}")
-    return reconstructed_images, superposition_data
+    return reconstructed_images, superposition_data, a, b
