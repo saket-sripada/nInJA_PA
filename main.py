@@ -18,7 +18,8 @@ from config import (
 )
 from fwd_model.generate_pressure_data import generate_pressure_data
 from fwd_model.inverse import reconstruct_image
-from fwd_model.utils import save_reconstructed_images, x_i
+from fwd_model.io import save_data_h5
+from fwd_model.utils import x_i
 
 
 def main():
@@ -54,7 +55,9 @@ def main():
         )
 
     # export / store pressure data
-    save_reconstructed_images(reconstructed_images, filename="reconstructed_images.h5")
+    # save_reconstructed_images(reconstructed_images)
+    # save_reconstructed_images(superposition_data)
+    save_data_h5(reconstructed_images, superposition_data)
 
     # load analytical pressure data, reconstructions
 
