@@ -18,6 +18,7 @@ from fwd_model.frequency_domain import bipolar_f, hEIR, hSIR_f
 
 
 def generate_pressure_data(sphere_radius, is_sir):
+    superposition_data = {}
     # This is the main loop that implements the frequency domain image model calculations in Section 2.2
     upsampling_ratio = 4
     padded_len = upsampling_ratio * N_samples
@@ -31,7 +32,7 @@ def generate_pressure_data(sphere_radius, is_sir):
     min_freq = np.min(freqs)
     bipolar_min_freq = bipolar_f(min_freq, sphere_radius, c0)
 
-    superposition_data = np.zeros((N_elements, N_samples))
+    superposition_data[(sphere_radius, is_sir)] = np.zeros((N_elements, N_samples))
     xamg, yamg, zamg = np.meshgrid(x_positions, y_positions, z_positions)
     for x, y, z in tqdm(zip(xamg.flatten(), yamg.flatten(), zamg.flatten()), total=xamg.size):
         sphere_positions = np.array((x, y, z))
@@ -56,6 +57,6 @@ def generate_pressure_data(sphere_radius, is_sir):
             # Perform the inverse FFT to transform to the time domain
             time_domain_combined_signal = np.fft.ifft(complete_combined_values)
             analytical_data[i_meas, :] += np.real(time_domain_combined_signal[:N_samples]) / dt / a / b
-    superposition_data += analytical_data
+        superposition_data[(sphere_radius, is_sir)] += analytical_data
 
-    return superposition_data
+    return superposition_data[(sphere_radius, is_sir)]
