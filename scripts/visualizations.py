@@ -72,6 +72,48 @@ def visualize_comparison(
     # save the figure to folder_name
     fig.savefig(folder_name + "comparison.png")
 
+    unique_keys = set(reconstructed_images.keys())
+    unique_radius = sorted(set(key[0] for key in unique_keys))
+    unique_is_sir = sorted(set(key[1] for key in unique_keys))
+    unique_bf = sorted(set(key[2] for key in unique_keys))
+    unique_fnum = sorted(set(key[3] for key in unique_keys))
+    unique_apod_mode = sorted(set(key[4] for key in unique_keys))
+
+    for radius in unique_radius:
+        for is_sir in unique_is_sir:
+            for bf in unique_bf:
+                plt.figure(figsize=(84, 42))
+                i = 0
+                for apod_mode in unique_apod_mode:
+                    for fnum in unique_fnum:
+                        i += 1
+                        key = (radius, is_sir, bf, fnum, apod_mode)
+
+                        if key not in reconstructed_images:
+                            continue
+
+                        value = reconstructed_images[key]
+
+                        plt.subplot(3, 5, i)
+                        plt.imshow(value, aspect="auto", cmap="hot", extent=[-L / 2, L / 2, L, 0])
+                        plt.colorbar(label="Intensity")
+                        plt.title(f"Recon: {bf}, f# {fnum} , apod : {apod_mode}", fontsize=label_font_size)
+                        plt.xlabel("Lateral position (mm)", fontsize=label_font_size)
+                        plt.ylabel("Axial position (mm)", fontsize=label_font_size)
+                        if is_sir:
+                            plt.suptitle(
+                                f"Center Freq = 8MHz +/-3dB, NumAperture_Transducer = {a}mm(W), {b}mm(H)",
+                                fontsize=2 * label_font_size,
+                            )
+                        else:
+                            plt.suptitle(f"Center Freq = 8MHz +/-3dB, point-Transducer", fontsize=2 * label_font_size)
+
+                plt.tight_layout()
+                plt.show()
+
+                # save the figure to folder_name with appropriate name
+                plt.savefig(folder_name + f"radius_{radius}_sir_{is_sir}_bf_{bf}.png")
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Visualize the comparison of analytical and reconstructed images")
