@@ -1,3 +1,4 @@
+import argparse
 import itertools
 
 import numpy as np
@@ -24,7 +25,22 @@ from fwd_model.io import save_data_h5
 from fwd_model.utils import x_i
 
 
+def parse_args():
+    parser = argparse.ArgumentParser(description="Forward model")
+    parser.add_argument("--debug", action="store_true", help="Debug mode")
+
+    return parser.parse_args()
+
+
 def main():
+    args = parse_args()
+    if args.debug:
+        global sph_radii, Tsir, f_values, apodisation_types
+        sph_radii = sph_radii[:1]
+        Tsir = Tsir[:1]
+        f_values = f_values[:1]
+        apodisation_types = apodisation_types[:1]
+
     # generate analytical pressure data
     superposition_data = {}
     P0gen_combos = list(itertools.product(sph_radii, Tsir))
