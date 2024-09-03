@@ -1,3 +1,5 @@
+import argparse
+import glob
 import os
 import sys
 
@@ -12,7 +14,17 @@ from fwd_model.io import load_data_h5
 label_font_size = 21
 
 
-def visualize_comparison(superposition_data, reconstructed_images, sphere_radii, x_positions, z_positions, L):
+def visualize_comparison(
+    folder_name,
+    superposition_data,
+    reconstructed_images,
+    sphere_radii,
+    x_positions,
+    z_positions,
+    L,
+    a,
+    b,
+):
     fig, axs = plt.subplots(3, 5, figsize=(25, 15))
     fig.suptitle("Comparison of Analytical and Reconstructed Images", fontsize=label_font_size)
 
@@ -61,19 +73,53 @@ def visualize_comparison(superposition_data, reconstructed_images, sphere_radii,
     fig.savefig(folder_name + "comparison.png")
 
 
-folder_name = "./outputs/20240902_183537/"  # Replace with your folder_name
-reconstructed_images, superposition_data, a, b = load_data_h5(folder_name)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Visualize the comparison of analytical and reconstructed images")
+    parser.add_argument("--folder", type=str, default="", help="Folder name containing the data")
+    # Add more arguments as needed
+    return parser.parse_args()
 
-# plotting params
-# sphere_radii = [1.542, 0.42, 0.21]  # Your sphere radii
-# Get unique sphere radii
-sphere_radii = sorted(set(key[0] for key in reconstructed_images.keys()))
 
-# Assume L is the maximum depth in your images
-L = reconstructed_images[list(reconstructed_images.keys())[0]].shape[1]
-delL = L / 3  # 3 = num_spheres along axis of transducer
+def main():
+    args = parse_args()
 
-x_positions = np.arange(-L / 2 + delL / 2, L / 2, delL)
-z_positions = np.arange(L / 4, 4 * L / 5, L / 4)  # 10mm to 31mm at 10mm steps
+    # folder_name = "./outputs/20240902_191309/"  # Replace with your folder_name
+    folder_name = args.folder
 
-visualize_comparison(superposition_data, reconstructed_images, sphere_radii, x_positions, z_positions, L)
+    # If folder name is empty, take the latest folder from outputs/
+    if folder_name == "":
+        folder_name = max(glob.glob("./outputs/*"), key=os.path.getctime)
+
+    # Add trailing slash if not present
+    if folder_name[-1] != "/":
+        folder_name += "/"
+
+    reconstructed_images, superposition_data, a, b = load_data_h5(folder_name)
+
+    # plotting params
+    # sphere_radii = [1.542, 0.42, 0.21]  # Your sphere radii
+    # Get unique sphere radii
+    sphere_radii = sorted(set(key[0] for key in reconstructed_images.keys()))
+
+    # Assume L is the maximum depth in your images
+    L = reconstructed_images[list(reconstructed_images.keys())[0]].shape[1]
+    delL = L / 3  # 3 = num_spheres along axis of transducer
+
+    x_positions = np.arange(-L / 2 + delL / 2, L / 2, delL)
+    z_positions = np.arange(L / 4, 4 * L / 5, L / 4)  # 10mm to 31mm at 10mm steps
+
+    visualize_comparison(
+        folder_name,
+        superposition_data,
+        reconstructed_images,
+        sphere_radii,
+        x_positions,
+        z_positions,
+        L,
+        a,
+        b,
+    )
+
+
+if __name__ == "__main__":
+    main()
