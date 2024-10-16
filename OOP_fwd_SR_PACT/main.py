@@ -54,6 +54,7 @@ def main():
 
     for r in [0.5, 0.5e-1]:  # , 0.5e-2, 0.5e-3]:
         # Set properties of spheres
+        # intensity is missing a way for G fCTOR, THE MU_A OF PARTICLE AND THE MU_EFF OF THE MEDIUM
         spheres = [
             Sphere(radius=r * 1e-3, intensity=np.exp(-z), x=x, y=0, z=z) for x in x_positions for z in z_positions
         ]
@@ -68,10 +69,10 @@ def main():
         pressure_data[r] = generator.generate_pressure_data()
 
         # Create image reconstructor
-        reconstructor = ImageReconstructor(aperture, physics_params)
+        field_of_view = np.array([-aperture.L / 2, aperture.L / 2, 0, 0, 0, aperture.L])
+        reconstructor = ImageReconstructor(aperture, physics_params, field_of_view)
 
         # Reconstruct images
-        field_of_view = np.array([-aperture.L / 2, aperture.L / 2, 0, 0, 0, aperture.L])
         reconstructed_images = {}
         for is_sir in recon_params.is_sir_list:
             for recon_method in recon_params.recon_methods:
@@ -87,19 +88,10 @@ def main():
                         reconstructed_images[tuple(recon_config.values())] = reconstructor.reconstruct_image(
                             time_series_data=torch.tensor(pressure_data[r], dtype=torch.float32),
                             bf=recon_method,
-                            sensor_positions=torch.tensor(
-                                np.array([[aperture.x_i(i), 0, 0] for i in range(aperture.N_elements)]),
-                                dtype=torch.float32,
-                            ),
-                            field_of_view_voxels=np.round(field_of_view / (aperture.L / aperture.N_elements)).astype(
-                                int
-                            ),
                             spacing_in_m=aperture.L / aperture.N_elements,
-                            speed_of_sound_in_m_per_s=physics_params.c0,
-                            time_spacing_in_s=physics_params.dt,
-                            torch_device=torch.device("cpu"),
                             fnumber=f_number,
                             apodisation=apodisation,
+                            torch_device=torch.device("cpu")
                         )
 
     # Create visualizer

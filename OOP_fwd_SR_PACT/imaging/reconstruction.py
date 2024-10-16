@@ -11,9 +11,10 @@ class ReconstructionParameters:
 
 
 class ImageReconstructor:
-    def __init__(self, aperture, physics_params):
+    def __init__(self, aperture, physics_params, field_of_view):
         self.aperture = aperture
         self.physics_params = physics_params
+        self.field_of_view = field_of_view
 
     def get_apodisation_factor(
         apodization_method: str = "box",
@@ -53,16 +54,20 @@ class ImageReconstructor:
         self,
         time_series_data: torch.tensor,
         bf: str,
-        sensor_positions: torch.tensor,
-        field_of_view_voxels: np.ndarray,
         spacing_in_m: float,
-        speed_of_sound_in_m_per_s: float,
-        time_spacing_in_s: float,
-        torch_device: torch.device,
         fnumber: float,
         apodisation,
+        torch_device: torch.device
     ) -> torch.tensor:
 
+        sensor_positions = torch.tensor(
+            np.array([[self.aperture.x_i(i), 0, 0] for i in range(self.aperture.N_elements)]),
+            dtype=torch.float32,
+        )
+
+        field_of_view_voxels = np.round(self.field_of_view / spacing_in_m).astype(int)
+        speed_of_sound_in_m_per_s = self.physics_params.c0
+        time_spacing_in_s = self.physics_params.dt
         n_sensor_elements = time_series_data.shape[0]
         x_dim = field_of_view_voxels[1] - field_of_view_voxels[0]
         y_dim = field_of_view_voxels[3] - field_of_view_voxels[2]
