@@ -30,6 +30,50 @@ class Visualizer:
         # Add more arguments as needed
         return parser.parse_args()
 
+    def plot_GT_RF_BF(
+            self,
+            pressure_data,
+            reconstructed_image            
+    ):
+        label_font_size = 21
+        fig, axs = plt.subplots(1, 3, figsize=(15, 5))
+        fig.suptitle("Ground Truth phantom, RF Pressure Traces, Beamformed Image", fontsize=label_font_size)
+
+        radii = [sphere.radius for sphere in self.phantom_config.spheres]
+        x_values = [sphere.position[0] for sphere in self.phantom_config.spheres]
+        z_values = [sphere.position[2] for sphere in self.phantom_config.spheres]
+
+        xamg, zamg = np.meshgrid(x_values, z_values)
+        for i, sphere_radius in enumerate(radii):
+            # Scatter plot of sphere positions
+            for xGT, zGT in tqdm(zip(xamg.flatten(), zamg.flatten()), total=xamg.size, desc="Plotting spheres"):
+                axs[0].scatter(xGT, zGT, c="orange", s=np.pi * (sphere_radius**2) * 4.2e1)
+            axs[0].set_xlim(-self.aperture.L / 2, self.aperture.L / 2)
+            axs[0].set_ylim(self.aperture.L, 0)
+            axs[0].set_title(f"Sphere_radius ={sphere_radius:.3f}")
+            axs[0].set_xlabel("Lateral position (mm)")
+            axs[0].set_ylabel("Axial position (mm)")
+
+        im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto")
+        axs[1].set_title(f"Analytical Pressure Data, NA_Tx = {self.aperture.a}mm(W), {self.aperture.b}mm(H)")
+        plt.colorbar(im2, ax=axs[1], label="Pressure")
+
+        # Reconstructed image (DMAS)
+        im4 = axs[2].imshow(reconstructed_image, cmap="hot", aspect="auto",
+            extent=[-self.aperture.L / 2, self.aperture.L / 2, self.aperture.L, 0])
+        axs[2].set_title(f"DMAS reconstruction of phantom")
+        axs[2].set_xlabel("Lateral position (mm)", fontsize=label_font_size)
+        axs[2].set_ylabel("Axial position (mm)", fontsize=label_font_size)
+        plt.colorbar(im4, ax=axs[2], label="Intensity")
+
+        plt.tight_layout()
+        plt.show()
+
+        # save the figure to folder_name
+        fig.savefig(self.folder_name + "locsGT_RBF.png")
+        fig.savefig("./outputs/test/locsGT_RBF.png")
+
+    # below needs lots of fixes
     def plot_comparison(
         self,
         superposition_data,

@@ -4,7 +4,7 @@ from datetime import datetime
 import h5py
 
 
-def save_data_h5(folder_name, pressure_data, reconstructed_images):
+def save_data_h5(folder_name, pressure_data, recon_params):
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     output_folder = os.path.join(folder_name, timestamp)
     os.makedirs(output_folder, exist_ok=True)
@@ -15,8 +15,8 @@ def save_data_h5(folder_name, pressure_data, reconstructed_images):
 
     # Save reconstructed images
     with h5py.File(os.path.join(output_folder, "reconstructed_images.h5"), "w") as f:
-        for key, value in reconstructed_images.items():
-            dataset_name = f"recon_{key[0]}_{key[1]}_{key[2]}_{key[3]}"
-            f.create_dataset(dataset_name, data=value, compression="gzip")
+        for attr_name, attr_value in vars(recon_params).items():
+            dataset_name = f"recon_{attr_name[0]}_{attr_name[1]}_{attr_name[2]}_{attr_name[3]}"
+            f.create_dataset(dataset_name, data=attr_value, compression="gzip")
 
     print(f"Data saved to {output_folder}")
