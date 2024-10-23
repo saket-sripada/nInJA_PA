@@ -3,8 +3,7 @@ import torch
 
 
 class ReconstructionParameters:
-    def __init__(self, is_sir_list, recon_methods, f_numbers, apodisation_types):
-        self.is_sir_list = is_sir_list
+    def __init__(self, recon_methods, f_numbers, apodisation_types):
         self.recon_methods = recon_methods
         self.f_numbers = f_numbers
         self.apodisation_types = apodisation_types

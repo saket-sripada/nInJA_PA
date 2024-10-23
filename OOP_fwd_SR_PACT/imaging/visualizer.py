@@ -1,16 +1,26 @@
 import argparse
 import glob
 import os
+import sys
+from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
 from tqdm import tqdm
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class Visualizer:
     def __init__(self, phantom_config, aperture):
         self.phantom_config = phantom_config
         self.aperture = aperture
+        filename=""
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        self.folder_name = f"./outputs/{timestamp}/"
+        os.makedirs(self.folder_name, exist_ok=True)
+        #save_path = self.folder_name + filename
+        """
         self.args = self.parse_args()
 
         # folder_name = "./outputs/20240902_191309/"  # Replace with your folder_name
@@ -19,10 +29,11 @@ class Visualizer:
         # If folder name is empty, take the latest folder from outputs/
         if self.folder_name == "":
             self.folder_name = max(glob.glob("./outputs/*"), key=os.path.getctime)
-
         # Add trailing slash if not present
         if self.folder_name[-1] != "/":
             self.folder_name += "/"
+        """
+
 
     def parse_args(self):
         parser = argparse.ArgumentParser(description="Visualize the comparison of analytical and reconstructed images")
@@ -71,8 +82,10 @@ class Visualizer:
 
         # save the figure to folder_name
         fig.savefig(self.folder_name + "locsGT_RBF.png")
-        fig.savefig("./outputs/test/locsGT_RBF.png")
+        #fig.savefig("./outputs/test/locsGT_RBF.png")
 
+    
+    
     # below needs lots of fixes
     def plot_comparison(
         self,

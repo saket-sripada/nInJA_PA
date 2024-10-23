@@ -36,7 +36,6 @@ def main():
 
     # Initialize reconstruction parameters
     recon_params = ReconstructionParameters(
-        is_sir_list=True,
         recon_methods="DMAS",
         f_numbers=0.42,
         apodisation_types="None",
@@ -54,7 +53,7 @@ def main():
     spheres = [
         Sphere(
             radius=0.3,  # 0.3mm radius to match lambda/2 resolution
-            intensity=1,  # placeholder intensity exp(-z*muEff) decay is applied within the Sphere class definition
+            intensity=42,  # placeholder intensity exp(-z*muEff) decay is applied within the Sphere class definition
             x=x,
             y=0,  # y=0 for now, as we are working in 2D
             z=z,

@@ -68,9 +68,11 @@ class PressureDataGenerator:
                 )
 
                 time_domain_combined_signal = np.fft.ifft(complete_combined_values)
-                dt = 1 / self.aperture.sampling_rate
+                
                 superposition_data[i_meas, :] += (
-                    sphere.intensity * np.real(time_domain_combined_signal[: self.PhysicsParameters.N_samples]) / dt
+                    np.real(time_domain_combined_signal[: self.PhysicsParameters.N_samples])
+                    * self.aperture.sampling_rate
+                    * sphere.intensity
                 )
 
         return superposition_data
