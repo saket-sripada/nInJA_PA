@@ -50,22 +50,22 @@ class Visualizer:
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
         fig.suptitle("Ground Truth phantom, RF Pressure Traces, Beamformed Image", fontsize=label_font_size)
 
-        radii = [sphere.radius for sphere in self.phantom_config.spheres]
-        x_values = [sphere.position[0] for sphere in self.phantom_config.spheres]
-        z_values = [sphere.position[2] for sphere in self.phantom_config.spheres]
+        for sphere in self.phantom_config.spheres:
+            xGT = sphere.position[0]
+            zGT = sphere.position[2]
+            sphere_radius = sphere.radius
+            axs[0].scatter(xGT, zGT, c="orange", s=np.pi * ((sphere_radius*1e3)**2))
+            # change colour by intensity aka depth
 
-        xamg, zamg = np.meshgrid(x_values, z_values)
-        for i, sphere_radius in enumerate(radii):
-            # Scatter plot of sphere positions
-            for xGT, zGT in tqdm(zip(xamg.flatten(), zamg.flatten()), total=xamg.size, desc="Plotting spheres"):
-                axs[0].scatter(xGT, zGT, c="orange", s=np.pi * (sphere_radius**2) * 4.2e1)
-            axs[0].set_xlim(-self.aperture.L / 2, self.aperture.L / 2)
-            axs[0].set_ylim(self.aperture.L, 0)
-            axs[0].set_title(f"Sphere_radius ={sphere_radius:.3f}")
-            axs[0].set_xlabel("Lateral position (mm)")
-            axs[0].set_ylabel("Axial position (mm)")
+        axs[0].set_xlim(-self.aperture.L / 2, self.aperture.L / 2)
+        axs[0].set_ylim(self.aperture.L, 0)
+        axs[0].set_title(f"Sphere_radius ={sphere_radius*1e3:.3f} mm")
+        axs[0].set_xlabel("Lateral position (m)")
+        axs[0].set_ylabel("Axial position (m)")
 
-        im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto")
+        vmax = np.percentile(np.abs(pressure_data.flatten()), 95)
+
+        im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto" , vmin  = -vmax, vmax = vmax)
         axs[1].set_title(f"Analytical Pressure Data, NA_Tx = {self.aperture.a}mm(W), {self.aperture.b}mm(H)")
         plt.colorbar(im2, ax=axs[1], label="Pressure")
 

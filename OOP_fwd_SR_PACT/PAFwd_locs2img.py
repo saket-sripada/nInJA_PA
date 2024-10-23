@@ -52,7 +52,7 @@ def main():
     # Set properties of spheres
     spheres = [
         Sphere(
-            radius=0.3,  # 0.3mm radius to match lambda/2 resolution
+            radius=0.3e-3,  # 0.3mm radius to match lambda/2 resolution
             intensity=42,  # placeholder intensity exp(-z*muEff) decay is applied within the Sphere class definition
             x=x,
             y=0,  # y=0 for now, as we are working in 2D
