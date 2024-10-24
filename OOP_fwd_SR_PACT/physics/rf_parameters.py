@@ -21,15 +21,16 @@ class PhysicsParameters:
 
 
 class Sphere:
-    def __init__(self, radius, intensity, x, y, z, muA=0.1, muS=10.0, g=0.9):
+    def __init__(self, radius, source_fluence, x, y, z, nInJA_muA = 42, muA_bg=0.1, muS_bg=1.0, g_bg=0.9):
         self.radius = radius
 
         self.position = np.array([x, y, z])
-        self.muA = muA  # Absorption coefficient
-        self.muS = muS
-        self.g_fwscat = g  # g-factor
-        self.muEff = np.sqrt(self.muA * (self.muA + self.muS * (1 - self.g_fwscat)))
-        self.intensity = intensity * np.exp(-z * self.muEff)
+        self.nInJA_muA = nInJA_muA #
+        self.muA_bg = muA_bg  # background tissue absorption coefficient
+        self.muS_bg = muS_bg # background tissue scattering coefficient
+        self.g_fwscat_bg = g_bg  # background tissue g-factor
+        self.muEff_bg = np.sqrt(self.muA_bg * (self.muA_bg + self.muS_bg * (1 - self.g_fwscat_bg)))
+        self.intensity = source_fluence * self.nInJA_muA * np.exp(-z * self.muEff_bg)
 
 
 class NInJACluster:

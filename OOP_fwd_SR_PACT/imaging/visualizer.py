@@ -15,25 +15,9 @@ class Visualizer:
     def __init__(self, phantom_config, aperture):
         self.phantom_config = phantom_config
         self.aperture = aperture
-        filename=""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.folder_name = f"./outputs/{timestamp}/"
         os.makedirs(self.folder_name, exist_ok=True)
-        #save_path = self.folder_name + filename
-        """
-        self.args = self.parse_args()
-
-        # folder_name = "./outputs/20240902_191309/"  # Replace with your folder_name
-        self.folder_name = self.args.folder
-
-        # If folder name is empty, take the latest folder from outputs/
-        if self.folder_name == "":
-            self.folder_name = max(glob.glob("./outputs/*"), key=os.path.getctime)
-        # Add trailing slash if not present
-        if self.folder_name[-1] != "/":
-            self.folder_name += "/"
-        """
-
 
     def parse_args(self):
         parser = argparse.ArgumentParser(description="Visualize the comparison of analytical and reconstructed images")
@@ -51,30 +35,39 @@ class Visualizer:
         fig.suptitle("Ground Truth phantom, RF Pressure Traces, Beamformed Image", fontsize=label_font_size)
 
         for sphere in self.phantom_config.spheres:
-            xGT = sphere.position[0]
-            zGT = sphere.position[2]
-            sphere_radius = sphere.radius
-            axs[0].scatter(xGT, zGT, c="orange", s=np.pi * ((sphere_radius*1e3)**2))
+            xGT = sphere.position[0] * 1e3 # converting to mm for plotting
+            zGT = sphere.position[2] * 1e3 # converting to mm for plotting
+            sphere_radius = sphere.radius * 1e3 # converting to mm for plotting
+            intensity = sphere.intensity
+            print(intensity)
+            scatter = axs[0].scatter(xGT, zGT, c=intensity, 
+                           s= 42* np.pi * ((sphere_radius)**2), cmap='hot')  # You can choose any colormap
+        
+        #vmax = np.percentile(np.abs(intensity), 90)
+        plt.colorbar(scatter, ax=axs[0], label='Intensity')
             # change colour by intensity aka depth
 
-        axs[0].set_xlim(-self.aperture.L / 2, self.aperture.L / 2)
-        axs[0].set_ylim(self.aperture.L, 0)
-        axs[0].set_title(f"Sphere_radius ={sphere_radius*1e3:.3f} mm")
-        axs[0].set_xlabel("Lateral position (m)")
-        axs[0].set_ylabel("Axial position (m)")
+        axs[0].set_xlim(-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3)
+        axs[0].set_ylim(self.aperture.L *1e3 , 0)
+        axs[0].set_title(f"Sphere_radius ={sphere_radius:.3f} mm")
+        axs[0].set_xlabel("Lateral position (mm)")
+        axs[0].set_ylabel("Axial position (mm)")
 
-        vmax = np.percentile(np.abs(pressure_data.flatten()), 95)
-
+        vmax = np.percentile(np.abs(pressure_data.flatten()), 90)
         im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto" , vmin  = -vmax, vmax = vmax)
         axs[1].set_title(f"Analytical Pressure Data, NA_Tx = {self.aperture.a}mm(W), {self.aperture.b}mm(H)")
         plt.colorbar(im2, ax=axs[1], label="Pressure")
+        axs[1].set_xlabel("Transducer element#")
 
         # Reconstructed image (DMAS)
+        vmax = np.percentile(np.abs(reconstructed_image.flatten()), 90)
+
         im4 = axs[2].imshow(reconstructed_image, cmap="hot", aspect="auto",
-            extent=[-self.aperture.L / 2, self.aperture.L / 2, self.aperture.L, 0])
+            extent=[-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3 ,
+                     self.aperture.L *1e3, 0])
         axs[2].set_title(f"DMAS reconstruction of phantom")
-        axs[2].set_xlabel("Lateral position (mm)", fontsize=label_font_size)
-        axs[2].set_ylabel("Axial position (mm)", fontsize=label_font_size)
+        axs[2].set_xlabel("Lateral position (mm)")
+        axs[2].set_ylabel("Axial position (mm)")
         plt.colorbar(im4, ax=axs[2], label="Intensity")
 
         plt.tight_layout()
@@ -82,10 +75,7 @@ class Visualizer:
 
         # save the figure to folder_name
         fig.savefig(self.folder_name + "locsGT_RBF.png")
-        #fig.savefig("./outputs/test/locsGT_RBF.png")
 
-    
-    
     # below needs lots of fixes
     def plot_comparison(
         self,
