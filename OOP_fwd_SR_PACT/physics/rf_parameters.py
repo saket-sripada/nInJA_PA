@@ -21,7 +21,7 @@ class PhysicsParameters:
 
 
 class Sphere:
-    def __init__(self, radius, source_fluence, x, y, z, nInJA_muA = 42, muA_bg=0.1, muS_bg=1.0, g_bg=0.9):
+    def __init__(self, radius, source_fluence, x, y, z, nInJA_muA, muA_bg=0.1, muS_bg=1.0, g_bg=0.9):
         self.radius = radius
 
         self.position = np.array([x, y, z])

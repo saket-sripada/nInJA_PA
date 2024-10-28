@@ -8,10 +8,11 @@ class PressureDataGenerator:
     Main class for generating pressure data.
     """
 
-    def __init__(self, phantom_config, aperture, PhysicsParameters):
+    def __init__(self, phantom_config, aperture, PhysicsParameters, acoustic_noise):
         self.phantom_config = phantom_config
         self.aperture = aperture
         self.PhysicsParameters = PhysicsParameters
+        self.noise_model = acoustic_noise
         self.device = torch.device("cpu")  # Can be changed to GPU if needed
 
     def bipolar_f(self, frequencies, epsilon):
@@ -68,11 +69,14 @@ class PressureDataGenerator:
                 )
 
                 time_domain_combined_signal = np.fft.ifft(complete_combined_values)
-                
+
                 superposition_data[i_meas, :] += (
                     np.real(time_domain_combined_signal[: self.PhysicsParameters.N_samples])
                     * self.aperture.sampling_rate
                     * sphere.intensity
                 )
 
-        return superposition_data
+        if self.noise_model:
+            noisy_pressure_data = self.noise_model.add_rf_noise(superposition_data)
+
+        return noisy_pressure_data

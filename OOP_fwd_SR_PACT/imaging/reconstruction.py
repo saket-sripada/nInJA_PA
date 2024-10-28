@@ -10,10 +10,11 @@ class ReconstructionParameters:
 
 
 class ImageReconstructor:
-    def __init__(self, aperture, physics_params, field_of_view):
+    def __init__(self, aperture, physics_params, field_of_view, acoustic_noise):
         self.aperture = aperture
         self.physics_params = physics_params
         self.field_of_view = field_of_view
+        self.noise_model = acoustic_noise
 
     def get_apodisation_factor(
         apodization_method: str = "box",
@@ -56,7 +57,7 @@ class ImageReconstructor:
         spacing_in_m: float,
         fnumber: float,
         apodisation,
-        torch_device: torch.device
+        torch_device: torch.device,
     ) -> torch.tensor:
 
         sensor_positions = torch.tensor(
@@ -148,7 +149,13 @@ class ImageReconstructor:
 
         # DMAS section below
         if bf == "DAS":
-            return values.sum(dim=-1).squeeze(1).cpu().numpy().T
+            recon_img = values.sum(dim=-1).squeeze(1).cpu().numpy().T
+            if self.noise_model:
+                reconstructed_image = self.noise_model.apply_system_effects(
+                    self.noise_model.add_post_beamforming_noise(recon_img)
+                )
+
+            return reconstructed_image
 
         elif bf == "DMAS":
             # print('multiplying delays for the DMAS method')
@@ -170,7 +177,14 @@ class ImageReconstructor:
             output *= torch.sign(torch.sum(values, dim=3))
             """
 
-            return output.squeeze().cpu().numpy().T
+            recon_img = output.squeeze().cpu().numpy().T
+            if self.noise_model:
+                reconstructed_image = self.noise_model.apply_system_effects(
+                    self.noise_model.add_post_beamforming_noise(recon_img)
+                )
+
+            return reconstructed_image
+
         else:
             print("unknown recon method")
             return None

@@ -12,12 +12,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 
 class Visualizer:
-    def __init__(self, phantom_config, aperture):
+    def __init__(self, phantom_config, aperture, recon_params, AcousticNoise):
         self.phantom_config = phantom_config
         self.aperture = aperture
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.folder_name = f"./outputs/{timestamp}/"
         os.makedirs(self.folder_name, exist_ok=True)
+        self.noise_model = AcousticNoise
+        self.recon_params = recon_params
 
     def parse_args(self):
         parser = argparse.ArgumentParser(description="Visualize the comparison of analytical and reconstructed images")
@@ -30,22 +32,25 @@ class Visualizer:
             pressure_data,
             reconstructed_image            
     ):
-        label_font_size = 21
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-        fig.suptitle("Ground Truth phantom, RF Pressure Traces, Beamformed Image", fontsize=label_font_size)
+        fig.suptitle(f"Ground Truth phantom,    RF Pressure Traces with {self.noise_model.noise_type} noise,    Beamformed Image with speckle noise")
+
+        sph_intensities = [sph.intensity for sph in self.phantom_config.spheres]
+        vmax = np.percentile(np.abs(sph_intensities), 95)
+        vmin = np.percentile(np.abs(sph_intensities), 5)
 
         for sphere in self.phantom_config.spheres:
             xGT = sphere.position[0] * 1e3 # converting to mm for plotting
             zGT = sphere.position[2] * 1e3 # converting to mm for plotting
             sphere_radius = sphere.radius * 1e3 # converting to mm for plotting
             intensity = sphere.intensity
-            print(intensity)
+            # print(intensity)
             scatter = axs[0].scatter(xGT, zGT, c=intensity, 
-                           s= 42* np.pi * ((sphere_radius)**2), cmap='hot')  # You can choose any colormap
-        
-        #vmax = np.percentile(np.abs(intensity), 90)
+                           s= 42* np.pi * ((sphere_radius)**2),
+                             cmap='turbo', vmin = vmin, vmax = vmax)
+
         plt.colorbar(scatter, ax=axs[0], label='Intensity')
-            # change colour by intensity aka depth
+        # change colour by intensity aka depth
 
         axs[0].set_xlim(-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3)
         axs[0].set_ylim(self.aperture.L *1e3 , 0)
@@ -61,11 +66,10 @@ class Visualizer:
 
         # Reconstructed image (DMAS)
         vmax = np.percentile(np.abs(reconstructed_image.flatten()), 90)
-
-        im4 = axs[2].imshow(reconstructed_image, cmap="hot", aspect="auto",
+        im4 = axs[2].imshow(reconstructed_image, cmap="gray", aspect="auto",
             extent=[-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3 ,
                      self.aperture.L *1e3, 0])
-        axs[2].set_title(f"DMAS reconstruction of phantom")
+        axs[2].set_title(f"{self.recon_params.recon_methods} reconstruction of phantom")
         axs[2].set_xlabel("Lateral position (mm)")
         axs[2].set_ylabel("Axial position (mm)")
         plt.colorbar(im4, ax=axs[2], label="Intensity")
