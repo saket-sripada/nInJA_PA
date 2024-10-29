@@ -39,15 +39,20 @@ def main():
 
     # want RHS of phantom to have 3 larger spheres from center to lateral extreme
     # and LHS to have clusters of ID size but having tiny spheres
-    x_positions = np.linspace(0, 0.9 * (aperture.L / 2), 3)
+
+    # x_positions = np.arange(2, 18, 5) * 1e-3 # 3 positions
+    x_positions = np.linspace(0.1 * (aperture.L / 2), 0.9 * (aperture.L / 2), 3)
     # z_positions = np.arange(10, 31, 10) * 1e-3 # 3 depths
     z_positions = np.linspace(0.25 * aperture.L, 0.75 * aperture.L, 3)
 
-    # Set properties of spheres
+    # Set properties of spheres for RHS of phantom
+
+    source_fluence = 4.2
+
     spheres = [
         Sphere(
-            radius=0.3 * 1e-3,  # 0.3mm radius to match lambda/2 resolution
-            source_fluence=4.2,  # placeholder intensity replace with SIMPA fluence
+            radius=0.3e-3,  # 0.3mm radius to match lambda/2 resolution
+            source_fluence=source_fluence,  # placeholder intensity replace with SIMPA fluence
             x=x,
             y=0,  # y=0 for now, as we are working in 2D
             z=z,
@@ -60,8 +65,23 @@ def main():
         for z in z_positions
     ]
 
+    conc = 1  # number density of nanoscopic IcG JAggregates in a microscopic cluster
+    # Set properties of clusters for LHS
+    clusters = [
+        NInJACluster(
+            center_x=-sphere.position[0],  # mirror position
+            center_z=sphere.position[2],  # same z position
+            cluster_radius=sphere.radius,  # same radius as corresponding sphere
+            num_ninjas=int(conc * 100),  # number of nanospheres in cluster, 100 for testing needs to be 1e6
+            source_fluence=source_fluence,  # same as spheres
+            nInJA_muA=sphere.nInJA_muA,  # same as spheres
+            extrusion_threshold=1e-6,  # 1 micron for now so test but should be 1nm
+        )
+        for sphere in spheres
+    ]
+
     # Initialize phantom configuration
-    phantom_config = PhantomConfiguration(spheres)
+    phantom_config = PhantomConfiguration(spheres, clusters)
 
     # Create noise model with custom parameters
     acoustic_noise = AcousticNoise(snr_db=25, speckle_std=0.05, noise_type="nakagami")

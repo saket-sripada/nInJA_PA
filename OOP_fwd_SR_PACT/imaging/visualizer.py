@@ -6,6 +6,7 @@ from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib.colors import LogNorm
 from tqdm import tqdm
 
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -27,48 +28,86 @@ class Visualizer:
         # Add more arguments as needed
         return parser.parse_args()
 
-    def plot_GT_RF_BF(
-            self,
-            pressure_data,
-            reconstructed_image            
-    ):
+    def plot_GT_RF_BF(self, pressure_data, reconstructed_image):
         fig, axs = plt.subplots(1, 3, figsize=(15, 5))
-        fig.suptitle(f"Ground Truth phantom,    RF Pressure Traces with {self.noise_model.noise_type} noise,    Beamformed Image with speckle noise")
+        fig.suptitle(
+            f"Ground Truth phantom,    RF Pressure Traces with {self.noise_model.noise_type} noise,    Beamformed Image with speckle noise"
+        )
 
-        sph_intensities = [sph.intensity for sph in self.phantom_config.spheres]
-        vmax = np.percentile(np.abs(sph_intensities), 95)
-        vmin = np.percentile(np.abs(sph_intensities), 5)
+        sphere_intensities = [sphere.intensity for sphere in self.phantom_config.spheres]
+        cluster_intensities = [cluster.total_intensity for cluster in self.phantom_config.clusters]
+        sph_vmax = np.percentile(np.abs(sphere_intensities), 95)
+        sph_vmin = np.percentile(np.abs(sphere_intensities), 5)
+        clu_vmax = np.percentile(np.abs(cluster_intensities), 95)
+        clu_vmin = np.percentile(np.abs(cluster_intensities), 5)
 
+        # Plot solid spheres on right side
         for sphere in self.phantom_config.spheres:
-            xGT = sphere.position[0] * 1e3 # converting to mm for plotting
-            zGT = sphere.position[2] * 1e3 # converting to mm for plotting
-            sphere_radius = sphere.radius * 1e3 # converting to mm for plotting
+            xGT = sphere.position[0] * 1e3  # converting to mm for plotting
+            zGT = sphere.position[2] * 1e3  # converting to mm for plotting
+            sphere_radius = sphere.radius * 1e3  # converting to mm for plotting
             intensity = sphere.intensity
             # print(intensity)
-            scatter = axs[0].scatter(xGT, zGT, c=intensity, 
-                           s= 42* np.pi * ((sphere_radius)**2),
-                             cmap='turbo', vmin = vmin, vmax = vmax)
+            scatter_sph = axs[0].scatter(
+                xGT,
+                zGT,
+                c=intensity,
+                s=42 * np.pi * ((sphere_radius) ** 2),
+                cmap="viridis",
+                norm=LogNorm(vmin=sph_vmin, vmax=sph_vmax),
+            )
 
-        plt.colorbar(scatter, ax=axs[0], label='Intensity')
+        # Plot clusters on left side
+        for cluster in self.phantom_config.clusters:
+            xGT = cluster.center[0] * 1e3  # converting to mm
+            zGT = cluster.center[2] * 1e3
+            cluster_radius = cluster.cluster_radius * 1e3
+
+            # Plot cluster shell (empty circle)
+            circle = plt.Circle((xGT, zGT), cluster_radius, fill=False, color="black", linestyle="--", alpha=0.7)
+            axs[0].add_artist(circle)
+
+            # Plot constituent nanospheres
+            for sphere in cluster.particles:
+                x = sphere.position[0] * 1e3
+                z = sphere.position[2] * 1e3
+                nano_radius = sphere.radius * 1e3
+
+                scatter_clu = axs[0].scatter(
+                    x,
+                    z,
+                    c=sphere.intensity,
+                    s=1,  # * np.pi * ((nano_radius) ** 2),  # very small points for nanospheres
+                    cmap="turbo",
+                    vmin=clu_vmin,
+                    vmax=clu_vmax,
+                    alpha=0.3,
+                )  # semi-transparent
+
+        plt.colorbar(scatter_sph, ax=axs[0], label="sphere Intensity")
+        plt.colorbar(scatter_clu, ax=axs[0], label="cluster Intensity")
         # change colour by intensity aka depth
 
-        axs[0].set_xlim(-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3)
-        axs[0].set_ylim(self.aperture.L *1e3 , 0)
+        axs[0].set_xlim(-self.aperture.L / 2 * 1e3, self.aperture.L / 2 * 1e3)
+        axs[0].set_ylim(self.aperture.L * 1e3, 0)
         axs[0].set_title(f"Sphere_radius ={sphere_radius:.3f} mm")
         axs[0].set_xlabel("Lateral position (mm)")
         axs[0].set_ylabel("Axial position (mm)")
 
         vmax = np.percentile(np.abs(pressure_data.flatten()), 90)
-        im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto" , vmin  = -vmax, vmax = vmax)
+        im2 = axs[1].imshow(pressure_data.T, cmap="gray", aspect="auto", vmin=-vmax, vmax=vmax)
         axs[1].set_title(f"Analytical Pressure Data, NA_Tx = {self.aperture.a}mm(W), {self.aperture.b}mm(H)")
         plt.colorbar(im2, ax=axs[1], label="Pressure")
         axs[1].set_xlabel("Transducer element#")
 
         # Reconstructed image (DMAS)
         vmax = np.percentile(np.abs(reconstructed_image.flatten()), 90)
-        im4 = axs[2].imshow(reconstructed_image, cmap="gray", aspect="auto",
-            extent=[-self.aperture.L / 2 *1e3 , self.aperture.L / 2 *1e3 ,
-                     self.aperture.L *1e3, 0])
+        im4 = axs[2].imshow(
+            reconstructed_image,
+            cmap="gray",
+            aspect="auto",
+            extent=[-self.aperture.L / 2 * 1e3, self.aperture.L / 2 * 1e3, self.aperture.L * 1e3, 0],
+        )
         axs[2].set_title(f"{self.recon_params.recon_methods} reconstruction of phantom")
         axs[2].set_xlabel("Lateral position (mm)")
         axs[2].set_ylabel("Axial position (mm)")

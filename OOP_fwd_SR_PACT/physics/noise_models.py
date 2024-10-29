@@ -5,15 +5,15 @@ from scipy.stats import nakagami
 
 class AcousticNoise:
     def __init__(self, snr_db, speckle_std, noise_type):
-        self.snr_db = snr_db
-        self.speckle_std = speckle_std
+        self.snr_db = snr_db # typically 20-30dB
+        self.speckle_std = speckle_std # 
         self.noise_type = noise_type
 
     def add_rf_noise(self, pressure_data):
         depth_indices = np.arange(pressure_data.shape[0])
         """Add depth-dependent noise to RF pressure data"""
         # Depth-dependent SNR scaling
-        depth_factor = 1 + 0.1 * (depth_indices / depth_indices.max())
+        depth_factor = 1 + 0.1 * (depth_indices / depth_indices.max()) # 1 + 0.1 * (z / z_max) is common 
         base_signal_power = np.mean(pressure_data**2)
         # Two-component Gaussian mixture for more realistic noise
         noise_power = base_signal_power / (10 ** (self.snr_db / 10))
@@ -25,7 +25,7 @@ class AcousticNoise:
 
         elif self.noise_type == "nakagami":
             # Nakagami noise model for tissue-like scattering
-            shape_m = 1.0  # Shape parameter
+            shape_m = 1.0  # rayleigh noise
             noise = nakagami.rvs(shape_m, scale=np.sqrt(noise_power), size=pressure_data.shape)
 
         return pressure_data + noise
@@ -47,7 +47,8 @@ class AcousticNoise:
     def apply_system_effects(self, image_data):
         """Apply realistic system effects"""
         # Apply frequency-dependent attenuation
-        freq_att = np.exp(-0.2 * np.arange(image_data.shape[0])[:, np.newaxis] / image_data.shape[0])
+        freq_att = np.exp(-0.5 * np.arange(image_data.shape[0])[:, np.newaxis] / image_data.shape[0])
+        # exp(-alpha * f * z) is common for frequency-dependent attenuation, alpha = 0.5 dB/cm/MHz
 
         # Add lateral resolution degradation with depth
         sigma = 0.2 + 0.8 * np.arange(image_data.shape[0])[:, np.newaxis] / image_data.shape[0]
